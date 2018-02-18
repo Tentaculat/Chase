@@ -118,25 +118,65 @@ def readAnswerNumbers(rOut):
       res = fo.readlines()
       if len(res) > 0:
         for line in res:
-          coords = line.split()
+          coords = map(int, line.split())
           result.append(coords)
 
     return result
 
-def sim(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, robots, workDir):
-  print ("Simulation\n" + 'fieldType = ' + str(fieldType) + 'fieldSize = ' + str(fieldSize)
-         + 'catcherCount = ' + str(catcherCount) + 'escapeeSpeed = ' + str(escapeeSpeed)
-         + 'turnLimit = ' + str(turnLimit) + 'robots: ' + str(robots))
+def boundaryCoordinate(fieldType, fieldSize, coord):
+    if coord < 0:
+      if fieldType == 0:
+        return -1
+      else:
+        return coord + fieldSize
+    elif coord >= fieldSize:
+      if fieldType == 0:
+        return -1
+      else:
+        return coord - fieldSize
 
-  escapeePosition = [-1, -1]
+    return coord
+
+def fixPosition(fieldType, fieldSize, position):
+    for p in position:
+      p = boundaryCoordinate(fieldType, fieldSize, p)
+      if p == -1:
+        return false
+    return true
+
+def fixCatcherPositions(fieldType, fieldSize, catcherPositions):
+  # Check field bounds
+  for i in range(len(catcherPositions)):
+    cp = catcherPositions[i]
+    if not fixPosition(fieldType, fieldSize, cp):
+      return false
+
+    for j in range(i):
+      if catcherPositions[j] == cp:
+        return false
+
+    return true
+
+
+
+
+
+def runDuel(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, catcherRobot, escapeeRobot, workDir):
+  print ("Run duel\n" + 'fieldType = ' + str(fieldType) + 'fieldSize = ' + str(fieldSize)
+         + 'catcherCount = ' + str(catcherCount) + 'escapeeSpeed = ' + str(escapeeSpeed)
+         + 'turnLimit = ' + str(turnLimit) + 'catcher robot: ' + str(catcherRobot) + 'escapee robot: ' + str(escapeeRobot))
+
   catcherPositions = [[-1, -1] for i in range(catcherCount)]
+  escapeePosition = [-1, -1]
 
   for currentTurn in range(turnLimit):
     print ('Turn: ' + str(currentTurn))
 
+    print ("Catcher's turn")
+
     currentPlayer = 0
 
-    rName = robots[curPlayer]
+    rName = catcherRobot
     prefix = workDir + stepstr + '_r' + str(curPlayer) + '_' + rName
     rIn = prefix + 'i.txt'
     rOut = prefix + 'o.txt'
@@ -151,89 +191,113 @@ def sim(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, robots, wor
 
     run_robot(rName, rIn, rOut)
 
-    if not os.path.isfile(rOut):
-      prevTurn += 'Player ' + str(curPlayer) + '(' + rName + ')' + ' returned nothing.'
-      return currentTurn;
-    coords = readAnswerNumbers(rOut)
+    answerNumbers = readAnswerNumbers(rOut)
 
-    if currentPlayer == 0:
-      if currentTurn == 0:
-        if len(coords) != 2 * catcherCount
-          continue
+    if len(answerNumbers) == 0:
+      prevTurn += 'Player ' + str(currentPlayer) + '(' + rName + ')' + ' returned nothing.'
+      return 0;
 
-    for player in range(2):
-      if a[CORNERS[player][0]][CORNERS[player][1]] == EMPTY or a[CORNERS[player][0]][CORNERS[player][1]] == player * TOWER:
-        a[CORNERS[player][0]][CORNERS[player][1]] = player
+    if len(answerNumbers) != 2 * catcherCount:
+      prevTurn += 'Player ' + str(currentPlayer) + '(' + rName + ')' + ' returned invalid answer.'
+      return 0;
 
-    curPlayer = curPlayer + 1 if curPlayer < 4 else 1
-    stepstr = str(step).zfill(3)
-    rnd = randint(1, 6)
-    print (arena_to_log(a) + "\n" + prevTurn)
-    prevTurn = ''
-    print ('Step: ' + str(step) + ', rnd = ' + str(rnd) + ', current player: ' + str(curPlayer))
-
-    if gameType == 0 and oneWinner(a):
-      print ('One winner')
-      break
-
-    if gameType == 1 and twoWinners(a):
-      print ('Two winners')
-      break
-
-    if gameType == 1 and not isMovePossible(a, curPlayer, rnd):
-      curPlayerBkp = curPlayer;
-      curPlayer = curPlayer + 2 if curPlayer < 3 else curPlayer - 2
-      print ('Player ' + str(curPlayerBkp) + ' has to skip his move, so ' + str(curPlayer) + ' will move.')
-
-    if gameType == 0 and not isMovePossible(a, curPlayer, rnd):
-      print ('Player ' + str(curPlayer) + ' has to skip his move.')
+    if currentTurn == 0:
+      for i in range(catcherCount):
+        catcherPositions[i][0] = answerNumbers[2 * i]
+        catcherPositions[i][1] = answerNumbers[2 * i + 1]
     else:
-      rName = robots[curPlayer-1]
-      prefix = workDir + stepstr + '_r' + str(curPlayer) + '_' + rName
-      rIn  = prefix + 'i.txt'
-      rOut = prefix + 'o.txt'
-      rInText = str(curPlayer) + ' ' + str(rnd) + "\n" + arena_to_str(a)
-      with open(rIn, "w") as fi:
-        fi.write(rInText)
-      run_robot(rName, rIn, rOut)
-      moveFrom = [-1, -1]
-      move = [0, 0]
-      if not os.path.isfile(rOut):
-        prevTurn += 'Player ' + str(curPlayer) + '(' + rName + ')' + ' returned nothing.'
-        continue
-      with open(rOut) as fo:
-        res = fo.readlines()
-        if len(res) > 0:
-          s = res[0].split()
-          if len(s) == 4:
-            moveFrom[0] = int(s[0])
-            moveFrom[1] = int(s[1])
-            move[0] = int(s[2])
-            move[1] = int(s[3])
-            print ('Move ' + str(moveFrom) + ' ' + str(move))
-            if abs(move[0]) + abs(move[1]) != rnd:
-              prevTurn += 'Player ' + str(curPlayer) + '(' + rName + ')' + ': wrong length of move.'
-              continue
-            if a[moveFrom[0]][moveFrom[1]] != curPlayer and a[moveFrom[0]][moveFrom[1]] != TOWER * curPlayer:
-              prevTurn += 'Player ' + str(curPlayer) + '(' + rName + ')' + ': move from wrong place.'
-              continue
-            if not isMoveCorrect(a, curPlayer, moveFrom, move):
-              prevTurn += 'Player ' + str(curPlayer) + '(' + rName + ')' + ': incorrect move.'
-              continue
-            prevTurn += 'Player ' + str(curPlayer) + '(' + rName + ')' + ' moved from ' + str(moveFrom) + ', move: ' + str(move) + '.'
+      for i in range(catcherCount):
+        an1 = answerNumbers[2 * i]
+        an2 = answerNumbers[2 * i + 1]
+        if an1 < -1 or an1 > 1 or an2 < -1 or an2 > 1 or an1 * an2 != 0:
+          return 0;
+        catcherPositions[i][0] += an1
+        catcherPositions[i][1] += an2
 
-      if moveFrom[0] < 0 or moveFrom[1] < 0:       
-        continue
+    if not fixCatcherPositions(fieldType, fieldSize, catcherPositions):
+      return 0;
 
-      if a[moveFrom[0]][moveFrom[1]] == curPlayer or a[moveFrom[0]][moveFrom[1]] == curPlayer * TOWER:
-        if a[moveFrom[0] + move[0]][moveFrom[1] + move[1]] == curPlayer:
-          a[moveFrom[0] + move[0]][moveFrom[1] + move[1]] = curPlayer * TOWER
-        else:
-          a[moveFrom[0] + move[0]][moveFrom[1] + move[1]] = curPlayer
-        if a[moveFrom[0]][moveFrom[1]] == curPlayer:
-          a[moveFrom[0]][moveFrom[1]] = EMPTY
-        else:
-          a[moveFrom[0]][moveFrom[1]] = curPlayer
+    for cp in catcherPositions:
+      if cp == escapeePosition:
+        print ("Escapee is caught!")
+        return turnLimit - currentTurn;
+
+    print ("Escapee's turn")
+
+    currentPlayer = 1
+
+    with open(rIn, "w") as fi:
+      fi.write(currentPlayer)
+      fi.write(fieldType, fieldSize)
+      fi.write(catcherCount, escapeeSpeed)
+      fi.write(turnLimit, currentTurn)
+      fi.write(escapeePosition)
+      fi.write(catcherPositions)
+
+    rName = escapeeRobot
+    prefix = workDir + stepstr + '_r' + str(curPlayer) + '_' + rName
+    rIn = prefix + 'i.txt'
+    rOut = prefix + 'o.txt'
+
+    run_robot(rName, rIn, rOut)
+
+    answerNumbers = readAnswerNumbers(rOut)
+
+    if len(answerNumbers) == 0:
+      prevTurn += 'Player ' + str(currentPlayer) + '(' + rName + ')' + ' returned nothing.'
+      return turnLimit - currentTurn
+
+    if currentTurn == 0:
+      if len(answerNumbers) != 2:
+        prevTurn += 'Player ' + str(currentPlayer) + '(' + rName + ')' + ' returned invalid answer.'
+        return turnLimit - currentTurn
+      escapeePosition = answerNumbers
+      if not fixPosition(0, fieldSize, escapeePosition):
+        return turnLimit - currentTurn
+    else:
+      if len(answerNumbers) != 2 * escapeeSpeed:
+        prevTurn += 'Player ' + str(currentPlayer) + '(' + rName + ')' + ' returned invalid answer.'
+        return turnLimit - currentTurn
+      for i in range(escapeeSpeed):
+        an1 = answerNumbers[2 * i]
+        an2 = answerNumbers[2 * i + 1]
+        if an1 < -1 or an1 > 1 or an2 < -1 or an2 > 1 or an1 * an2 != 0:
+          return turnLimit - currentTurn
+        escapeePosition[0] += an1
+        escapeePosition[1] += an2
+
+    if not fixPosition(fieldType, fieldSize, escapeePosition):
+        return turnLimit - currentTurn
+
+    for cp in catcherPositions:
+      if cp == escapeePosition:
+        print ("Escapee is caught!")
+        return turnLimit - currentTurn
+
+
+
+def sim(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, robots, workDir):
+  print ("Simulation\n" + 'fieldType = ' + str(fieldType) + 'fieldSize = ' + str(fieldSize)
+         + 'catcherCount = ' + str(catcherCount) + 'escapeeSpeed = ' + str(escapeeSpeed)
+         + 'turnLimit = ' + str(turnLimit) + 'robots: ' + str(robots))
+
+  robotCount = len(robots)
+  robotScores = [] + robotCount
+
+  for i in range(robotCount):
+    for j in range(i):
+      r = runDuel(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, robots[i], robots[j], workDir)
+      robotScores[i] += r
+      robotScores[j] += turnLimit - r
+
+      r = runDuel(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, robots[j], robots[i], workDir)
+      robotScores[j] += r
+      robotScores[i] += turnLimit - r
+
+  print ("Final score:")
+
+  for i in range(robotCount):
+    print ("Robot " + str(i) + ": " + str(robotScores[i]))
 
 def main(argv=None):
   if len(sys.argv) < 2:
@@ -262,8 +326,8 @@ def main(argv=None):
   turnLimit = int(content[4])
 
   robots = []
-  for i in range(2):
-    robots.append(content[i+4].strip())
+  for i in range(len(content) - 5):
+    robots.append(content[i+5].strip())
 
   sim(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, robots, workDir)
 
