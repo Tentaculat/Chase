@@ -64,7 +64,7 @@ def main(argv=None):
           x = 0
           y += 1
     else:
-      dx = 1
+      dx = 0
       dy = 1
       for i in range(catcherCount):
         answer += str(dx) + " " + str(dy) + "\n"

@@ -129,11 +129,13 @@ def runDuel(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, catcher
         dx = answerNumbers[2 * i]
         dy = answerNumbers[2 * i + 1]
         if not isCorrectMotion(dx, dy):
+          print ("Incorrect motion!")
           return 0
         catcherPositions[i][0] += dx
         catcherPositions[i][1] += dy
 
     if not trimCatcherPositions(fieldType, fieldSize, catcherPositions):
+      print ("Incorrect catcher's position!")
       return 0
 
     if isEscapeeCaught(catcherPositions, escapeePosition):
@@ -144,13 +146,13 @@ def runDuel(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, catcher
 
     currentPlayer = 1
 
-    writeRobotInputFile(rIn, currentPlayer, fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, currentTurn,
-                        escapeePosition, catcherPositions)
-
     rName = escapeeRobot
     prefix = workDir + stepstr + '_r' + str(currentPlayer) + '_' + rName
     rIn = prefix + 'i.txt'
     rOut = prefix + 'o.txt'
+
+    writeRobotInputFile(rIn, currentPlayer, fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, currentTurn,
+                        escapeePosition, catcherPositions)
 
     run_robot(rName, rIn, rOut)
 
