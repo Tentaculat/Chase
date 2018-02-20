@@ -38,8 +38,6 @@ def trimCoordinate(fieldType, fieldSize, coord):
       else:
         return coord - fieldSize
 
-    return coord
-
 def trimPosition(fieldType, fieldSize, position):
     for p in position:
       p = trimCoordinate(fieldType, fieldSize, p)
@@ -69,6 +67,22 @@ def isEscapeeCaught(catcherPositions, escapeePosition):
         return True
 
   return False
+
+def printField(fieldSize, catcherPositions, escapeePosition):
+    result = ""
+    for y in range(fieldSize):
+        for x in range(fieldSize):
+            if escapeePosition == [x, y]:
+                p = "E"
+            else:
+                p = "."
+                for cp in catcherPositions:
+                    if cp == [x, y]:
+                        p = "C"
+            result += p
+        result += "\n"
+
+    print result
 
 def writeRobotInputFile(rIn, currentPlayer, fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, currentTurn,
                         escapeePosition, catcherPositions):
@@ -134,7 +148,11 @@ def runDuel(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, catcher
         catcherPositions[i][0] += dx
         catcherPositions[i][1] += dy
 
-    if not trimCatcherPositions(fieldType, fieldSize, catcherPositions):
+    isPositionCorrect = trimCatcherPositions(fieldType, fieldSize, catcherPositions)
+
+    printField(fieldSize, catcherPositions, escapeePosition)
+
+    if not isPositionCorrect:
       print ("Incorrect catcher's position!")
       return 0
 
@@ -177,16 +195,22 @@ def runDuel(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, catcher
         dx = answerNumbers[2 * i]
         dy = answerNumbers[2 * i + 1]
         if not isCorrectMotion(dx, dy):
+          print ("Incorrect motion!")
           return turnLimit - currentTurn
         escapeePosition[0] += dx
         escapeePosition[1] += dy
-
-    if not trimPosition(fieldType, fieldSize, escapeePosition):
-        return turnLimit - currentTurn
+        isPositionCorrect = trimPosition(fieldType, fieldSize, escapeePosition)
+        printField(fieldSize, catcherPositions, escapeePosition)
+        if not isPositionCorrect:
+          print ("Incorrect escapee's position! Escapee is caught on turn " + str(currentTurn))
+          return turnLimit - currentTurn
 
     if isEscapeeCaught(catcherPositions, escapeePosition):
-      print ("Escapee is caught!")
+      print ("Escapee is caught on turn " + str(currentTurn))
       return turnLimit - currentTurn
+
+  print ("Turn limit is exhausted! Escapee wins!")
+  return 0
 
 def sim(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, robots, workDir):
   print ("Simulation\n" + 'fieldType = ' + str(fieldType) + ', fieldSize = ' + str(fieldSize)

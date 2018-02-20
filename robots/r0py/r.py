@@ -74,7 +74,7 @@ def main(argv=None):
       y = fieldSize / 2
       answer += str(x) + " " + str(y) + "\n"
     else:
-      dx = 1
+      dx = 0
       dy = 1
       for i in range(escapeeSpeed):
         answer += str(dx) + " " + str(dy) + "\n"
