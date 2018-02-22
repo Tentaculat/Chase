@@ -37,9 +37,6 @@ def trimCatcherPositions(fieldType, fieldSize, catcherPositions):
     position = catcherPositions[i]
     if not trimPosition(fieldType, fieldSize, position):
       return False
-    for j in range(i):
-      if catcherPositions[j] == position:
-        return False
   return True
 
 def isCorrectMotion(dx, dy):
@@ -59,9 +56,12 @@ def printField(fieldSize, catcherPositions, escapeePosition):
         p = "E"
       else:
         p = "."
+        catcherCount = 0
         for cp in catcherPositions:
           if cp == [x, y]:
-            p = "C"
+            catcherCount += 1
+        if catcherCount > 0:
+          p = str(catcherCount)
       result += p
     result += "\n"
   print result
