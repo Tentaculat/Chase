@@ -11,39 +11,25 @@ def run_robot(rName, rIn, rOut):
     retCode = subprocess.call(runLines[0].strip() + " \"" + rIn + "\" \"" + rOut + "\"", shell=True, cwd='robots/' + rName)
 
 def readNumbersFromFile(fileName):
-    if not os.path.isfile(fileName):
-      return []
-
-    result = []
-
-    with open(fileName) as file:
-      lines = file.readlines()
-      if len(lines) > 0:
-        for line in lines:
-          parts = line.split()
-          for p in parts:
-            result.append(int(p))
-
-    return result
+  if not os.path.isfile(fileName):
+    return []
+  result = []
+  with open(fileName) as file:
+    for val in file.read().split():
+      result.append(int(val))
+  return result
 
 def trimCoordinate(fieldType, fieldSize, coord):
-    if coord < 0:
-      if fieldType == 0:
-        return -1
-      else:
-        return coord + fieldSize
-    elif coord >= fieldSize:
-      if fieldType == 0:
-        return -1
-      else:
-        return coord - fieldSize
+  if fieldType == 0 and (coord < 0 or coord >= fieldSize):
+    return -1
+  return coord % fieldSize
 
 def trimPosition(fieldType, fieldSize, position):
-    for p in position:
-      p = trimCoordinate(fieldType, fieldSize, p)
-      if p == -1:
-        return False
-    return True
+  for i in range(len(position)):
+    position[i] = trimCoordinate(fieldType, fieldSize, position[i])
+    if position[i] == -1:
+      return False
+  return True
 
 def trimCatcherPositions(fieldType, fieldSize, catcherPositions):
   # Check field bounds
@@ -51,12 +37,10 @@ def trimCatcherPositions(fieldType, fieldSize, catcherPositions):
     position = catcherPositions[i]
     if not trimPosition(fieldType, fieldSize, position):
       return False
-
     for j in range(i):
       if catcherPositions[j] == position:
         return False
-
-    return True
+  return True
 
 def isCorrectMotion(dx, dy):
   return -1 <= dx <= 1 and -1 <= dy <= 1 and dx * dy == 0
@@ -65,24 +49,22 @@ def isEscapeeCaught(catcherPositions, escapeePosition):
   for position in catcherPositions:
       if position == escapeePosition:
         return True
-
   return False
 
 def printField(fieldSize, catcherPositions, escapeePosition):
-    result = ""
-    for y in range(fieldSize):
-        for x in range(fieldSize):
-            if escapeePosition == [x, y]:
-                p = "E"
-            else:
-                p = "."
-                for cp in catcherPositions:
-                    if cp == [x, y]:
-                        p = "C"
-            result += p
-        result += "\n"
-
-    print result
+  result = ""
+  for y in range(fieldSize):
+    for x in range(fieldSize):
+      if escapeePosition == [x, y]:
+        p = "E"
+      else:
+        p = "."
+        for cp in catcherPositions:
+          if cp == [x, y]:
+            p = "C"
+      result += p
+    result += "\n"
+  print result
 
 def writeRobotInputFile(rIn, currentPlayer, fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, currentTurn,
                         escapeePosition, catcherPositions):
@@ -204,10 +186,9 @@ def runDuel(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, catcher
         if not isPositionCorrect:
           print ("Incorrect escapee's position! Escapee is caught on turn " + str(currentTurn))
           return turnLimit - currentTurn
-
-    if isEscapeeCaught(catcherPositions, escapeePosition):
-      print ("Escapee is caught on turn " + str(currentTurn))
-      return turnLimit - currentTurn
+        if isEscapeeCaught(catcherPositions, escapeePosition):
+          print ("Escapee is caught on turn " + str(currentTurn))
+          return turnLimit - currentTurn
 
   print ("Turn limit is exhausted! Escapee wins!")
   return 0
