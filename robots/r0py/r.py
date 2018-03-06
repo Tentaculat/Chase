@@ -4,20 +4,13 @@ import sys
 import os
 
 def readNumbersFromFile(fileName):
-    if not os.path.isfile(fileName):
-      return []
-
-    result = []
-
-    with open(fileName) as file:
-      lines = file.readlines()
-      if len(lines) > 0:
-        for line in lines:
-          parts = line.split()
-          for p in parts:
-            result.append(int(p))
-
-    return result
+  if not os.path.isfile(fileName):
+    return []
+  result = []
+  with open(fileName) as file:
+    for val in file.read().split():
+      result.append(int(val))
+  return result
 
 def main(argv=None):
   print ('R0py')
@@ -70,8 +63,8 @@ def main(argv=None):
         answer += str(dx) + " " + str(dy) + "\n"
   else:
     if currentTurn == 0:
-      x = fieldSize / 2
-      y = fieldSize / 2
+      x = int(fieldSize / 2)
+      y = int(fieldSize / 2)
       answer += str(x) + " " + str(y) + "\n"
     else:
       dx = 0

@@ -64,7 +64,7 @@ def printField(fieldSize, catcherPositions, escapeePosition):
           p = str(catcherCount)
       result += p
     result += "\n"
-  print result
+  print (result)
 
 def writeRobotInputFile(rIn, currentPlayer, fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, currentTurn,
                         escapeePosition, catcherPositions):
