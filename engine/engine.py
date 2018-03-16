@@ -205,7 +205,9 @@ def sim(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, robots, wor
 
   for i in range(robotCount):
     for j in range(i):
-      result = runDuel(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, robots[j], robots[i], workDir)
+      catcherRobotIndex = i + (i + j) % 2 * (j - i)
+      escapeeRobotIndex = j + (i + j) % 2 * (i - j)
+      result = runDuel(fieldType, fieldSize, catcherCount, escapeeSpeed, turnLimit, robots[catcherRobotIndex], robots[escapeeRobotIndex], workDir)
       robotScores[j] += result
       robotScores[i] += turnLimit - result
 
